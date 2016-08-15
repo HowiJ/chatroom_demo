@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="./css/skeleton.min.css">
+        <style>
+            input, textarea {
+                width: 100%;
+            }
+            .chat {
+                height: 300px;
+                overflow-y: scroll;
+            }
+        </style>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js"></script>
+        <script>
+            (function(){
+
+            var socket;
+
+            $(document).ready(function() {
+                function namePrompt() {
+                    var name = prompt('Please enter your name');
+                    socket.emit('join', name);
+                }
+                console.log('Document is ready');
+                socket = io.connect();
+
+                namePrompt();
+                socket.on('nameFail', function() {
+                    namePrompt();
+                })
+
+                socket.on('user', function(users) {
+                    $('.people').html('');
+                    for (var user in users) {
+                        var message = ''
+                            + '<div class="row">'
+                                + '<div class="twelve columns">'
+                                + users[user]
+                                + '</div>'
+                            + '</div>';
+                        $('.people').append(message);
+                    }
+                })
+                socket.on('message_receive', function(messages) {
+                    $('.chat').html('');
+                    for (var message in messages) {
+                        var eachMessage = ''
+                            + '<div class="row">'
+                                + '<div class="columns two">'
+                                    + messages[message].name
+                                + '</div>'
+                                + '<div class="columns ten">'
+                                    + messages[message].message
+                                + '</div>'
+                            + '</div>';
+                        $('.chat').append(eachMessage);
+                    }
+                    var element = document.getElementById("chat");
+                    element.scrollTop = element.scrollHeight;
+                })
+
+                $('#chatterForm').submit(function(e) {
+                    e.preventDefault();
+                    var message = $('#chatter').val();
+
+                    socket.emit('message_send', message);
+
+
+                    $('#chatter').val('');
+                })
+                $('#chatter').keypress(function(e) {
+                    if (e.keyCode == 13 && !e.shiftKey) {
+                        e.preventDefault();
+                        $('#chatterForm').submit();
+                    }
+                })
+            })
+        })();
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row top">
+                <div class="columns ten">
+                    <h4>Chat</h4>
+                </div>
+                <div class="columns two">
+                    <h4>People</h4>
+                </div>
+            </div>
+            <div class="row middle">
+                <div class="columns ten chat" id="chat">&nbsp;</div>
+                <div class="columns two people">&nbsp;</div>
+            </div>
+            <div class="row bottom">
+                <form id="chatterForm">
+                    <div class="columns ten">
+                        <textarea id="chatter"></textarea>
+                    </div>
+                    <div class="columns two">
+                        <input type="submit">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>
